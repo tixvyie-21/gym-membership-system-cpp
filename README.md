@@ -1,136 +1,87 @@
+# Gym Membership Management System (C++, OOP)
 
-# Gym Management System
+A console application that manages gym members, plans, trainers, renewals and
+check-ins. Built to demonstrate core Object-Oriented Programming concepts in C++.
 
-A console-based Gym Management System developed using C++ and File Handling.
-
-## About the Project
-
-This project helps gym administrators manage member registrations,
-membership plans, payments and gym records through a simple
-console-based interface.
-
-Member information and payment records are stored in text files,
-so the data remains available even after the application closes.
-
-## Technologies Used
-
-- C++
-- Object-Oriented Programming (OOP)
-- File Handling
-- STL Vector
-- Searching and Data Management
-
-## Features
-
-1. Register new gym members.
-2. View all registered members.
-3. Search members by ID, name or phone.
-4. Update member information.
-5. Delete member records.
-6. Manage membership plans.
-7. Record membership payments.
-8. View individual payment history.
-9. Generate gym reports.
-10. Store records permanently using text files.
-
-## Membership Plans
-
-| Plan | Fee |
-|---|---:|
-| Monthly | Rs. 1,000 |
-| Quarterly | Rs. 2,700 |
-| Half Yearly | Rs. 5,000 |
-| Yearly | Rs. 9,000 |
-
-## Project Structure
-
-```text
-Gym-Management-System/
-│
-├── main.cpp
-├── README.md
-├── .gitignore
-└── data/
-    ├── members.txt
-    └── payments.txt
-```
-
-The data files are generated automatically when
-the application starts.
-
-## Requirements
-
-- C++ compiler supporting C++17
-- GCC / MinGW or another compatible compiler
-- Windows, Linux or macOS
-
-## How to Run
-
-### Step 1: Clone the Repository
+## How to build and run
 
 ```bash
-git clone YOUR_REPOSITORY_URL
+g++ -std=c++17 -Wall -Wextra -o gym *.cpp
+./gym            # on Windows: gym.exe
 ```
 
-### Step 2: Open the Project Folder
+Requires a C++17 compiler (g++, clang++ or MSVC). Or use the included `Makefile`:
 
 ```bash
-cd Gym-Management-System
-```
-
-### Step 3: Compile
-
-```bash
-g++ -std=c++17 -Wall -Wextra main.cpp -o gym
-```
-
-### Step 4: Run
-
-Windows:
-
-```bash
-gym.exe
-```
-
-Linux / macOS:
-
-```bash
+make
 ./gym
 ```
 
-## Data Storage
+## Features
+- Add members on Basic, Premium or Student plans (fee calculated per plan)
+- List / search / remove members
+- Renew memberships (extends from the old expiry date if still active)
+- Check-in tracking (blocked for expired members)
+- Assign personal trainers (Premium only, max 5 clients each)
+- View expired memberships and total revenue
 
-The project uses two text files:
+## OOP concepts and where to find them
 
-- members.txt: Stores member details and payment totals.
-- payments.txt: Stores individual payment transactions.
+| Concept | Where |
+|---|---|
+| **Abstraction** | `Member` is an abstract class: pure virtual `getPlanName()`, `getBenefits()` |
+| **Interface** | `Payable` (only pure virtual functions), inherited by `Member` |
+| **Inheritance** | `BasicMember`, `PremiumMember`, `StudentMember` inherit from `Member` |
+| **Polymorphism (overriding)** | Each plan overrides `calculateFee()`, `getBenefits()`; `PremiumMember` overrides `canHaveTrainer()` |
+| **Polymorphism (base pointer)** | `std::unique_ptr<Member> m = std::make_unique<PremiumMember>(...)` in `main.cpp`; `Gym` only uses `Member` |
+| **Virtual destructor** | `virtual ~Payable()` and `virtual ~Member()` so derived objects are destroyed correctly |
+| **Encapsulation** | Private data, getters, validated setters (`setName`, `setPhone`) |
+| **Association / composition** | `Gym` owns Members and Trainers; `Trainer` keeps pointers to its client Members |
+| **Static members** | `nextId` counters in `Member` and `Trainer` generate unique IDs |
+| **const correctness** | `const int id`, `const` member functions, `override` keyword |
+| **Custom exceptions** | `GymException`, `MembershipExpiredException`, `MemberNotFoundException` |
+| **Exception handling** | `try` / `catch` in `main()` |
+| **RAII / smart pointers** | `std::unique_ptr` in `Gym`: no manual `new` / `delete` |
+| **STL containers** | `std::vector<std::unique_ptr<Member>>`, `std::vector<std::unique_ptr<Trainer>>` |
+| **Forward declaration** | `class Trainer;` in `Member.h` breaks the Member <-> Trainer include cycle |
 
-Records are separated using the pipe (|) character.
+## Fee rules
+| Plan | Monthly | Discount |
+|---|---|---|
+| Basic | Rs. 1000 | none |
+| Premium | Rs. 2000 | 10% off for 6+ months |
+| Student | Rs. 700 | 5% off for 3+ months |
 
-## Concepts Demonstrated
+## File overview
+| File | Purpose |
+|---|---|
+| `Payable.h` | Interface |
+| `Exceptions.h` | Custom exception classes |
+| `Member.h / Member.cpp` | Abstract base class |
+| `BasicMember.h`, `PremiumMember.h`, `StudentMember.h` | Concrete plans |
+| `Trainer.h / Trainer.cpp` | Trainer class |
+| `Gym.h / Gym.cpp` | Manager class (business logic) |
+| `main.cpp` | Console menu |
 
-- Classes and Objects
-- Encapsulation
-- Vectors
-- Functions
-- File Input and Output
-- Searching
-- Updating and Deleting Records
-- Input Validation
+## Ideas to extend (good for your GitHub)
+1. Save/load data to a file (text/CSV or binary serialization) so data persists
+2. Add a `Payment` class with receipts and payment history
+3. Use `operator<<` overloading instead of `toString()`
+4. Add unit tests with Catch2 or GoogleTest for `calculateFee()` and `renew()`
+5. Use SQLite for storage
+6. Build a GUI with Qt
 
-## Future Improvements
+## Class diagram (simplified)
 
-- Membership expiry date tracking.
-- Trainer management.
-- Attendance tracking.
-- Monthly revenue reports.
-- Admin login system.
-- Database integration.
+```
+        <<interface>> Payable
+                ^
+                |
+        <<abstract>> Member  ---- has-a ---->  Trainer*
+         ^       ^       ^
+         |       |       |
+  BasicMember PremiumMember StudentMember
 
-## Author
-
-CSE Student
-
-## License
-
-This project is available for educational and learning purposes.
+  Gym ---- owns ----> vector<unique_ptr<Member>>, vector<unique_ptr<Trainer>>
+  main ---- uses ----> Gym
+```
